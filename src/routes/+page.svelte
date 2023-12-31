@@ -9,7 +9,7 @@
 	import { hexToRgb, rgbToHsl, hslToRgb } from '../utils/colour';
 	import { browser } from '$app/environment';
 	import { decode as decodeToAry, encode as encodeAry } from 'base65536';
-	import { LngLat } from 'maplibre-gl';
+	import { LngLat, operations } from 'maplibre-gl';
 	import {interpretLabelsToCode} from '../components/rtLabelsToMapboxStyle';
 	import { flatten } from '../utils/flatten';
 	import { fade } from 'svelte/transition';
@@ -60,6 +60,7 @@
 	let sidebarView = 0;
 	let announcermode = false;
 	let realtime_list: string[] = [];
+	let operator_list: string[] = [];
 	let vehiclesData: Record<string, any> = {};
 	//stores geojson data for currently rendered GeoJSON realtime vehicles data, indexed by realtime feed id
 	let geometryObj : Record<string, any> = {};
@@ -373,6 +374,21 @@
 
   }
 	
+  	function getOperators() {
+		const result = [];
+
+		for (const feedKey of realtime_list) {
+			if (realtime_feeds_in_frame.hasOwnProperty(feedKey)) {
+			const feed = realtime_feeds_in_frame[feedKey];
+			const operators = feed.operators;
+
+			// Concatenate the operators array to the result array
+			result.push(...operators);
+			}
+		}
+		operator_list = result;
+	}
+
 	const interleave = (arr: any, thing: any) =>
 		[].concat(...arr.map((n: any) => [n, thing])).slice(0, -1);
 
@@ -1173,6 +1189,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 		});
 
 		map.on('touchmove', (events) => {
@@ -1210,6 +1227,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 		});
 
 		function fetchKactus() {
@@ -1808,6 +1826,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 			}, 1000);
 
 		});
@@ -2321,15 +2340,15 @@ on:keydown={() => {
 			{/if}
 		{/if}
 		{#if sidebarView == 2}
-		<h1 class="text-3xl">Super Secret Map Settings ;)</h1>
-			{#each realtime_list as option (option)}
+			<h1 class="text-3xl">Super Secret Map Settings ;)</h1>
+			{#each operator_list as option (option)}
 				<div>
 					<input
 						on:click={(x) => {
-							console.log("lolpro11", realtime_feeds_in_frame);
+							console.log("lolpro11", operators);
 						}}
 						on:keydown={(x) => {
-							console.log("lolpro11", realtime_feeds_in_frame);
+							console.log("lolpro11", operators);
 						}}
 						id="{option}"
 						type="checkbox"
