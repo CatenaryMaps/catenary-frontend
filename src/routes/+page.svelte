@@ -386,7 +386,7 @@
 			result.push(...operators);
 			}
 		}
-		operator_list = result;
+		operator_list = [...new Set(result)];
 	}
 
 	const interleave = (arr: any, thing: any) =>
