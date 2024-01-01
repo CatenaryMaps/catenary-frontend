@@ -9,7 +9,7 @@
 	import { hexToRgb, rgbToHsl, hslToRgb } from '../utils/colour';
 	import { browser } from '$app/environment';
 	import { decode as decodeToAry, encode as encodeAry } from 'base65536';
-	import { LngLat } from 'maplibre-gl';
+	import { LngLat, operations } from 'maplibre-gl';
 	import {interpretLabelsToCode} from '../components/rtLabelsToMapboxStyle';
 	import { flatten } from '../utils/flatten';
 	import { fade } from 'svelte/transition';
@@ -60,6 +60,7 @@
 	let sidebarView = 0;
 	let announcermode = false;
 	let realtime_list: string[] = [];
+	let operator_list: string[] = [];
 	let vehiclesData: Record<string, any> = {};
 	//stores geojson data for currently rendered GeoJSON realtime vehicles data, indexed by realtime feed id
 	let geometryObj : Record<string, any> = {};
@@ -373,6 +374,21 @@
 
   }
 	
+  	function getOperators() {
+		const result = [];
+
+		for (const feedKey of realtime_list) {
+			if (realtime_feeds_in_frame.hasOwnProperty(feedKey)) {
+			const feed = realtime_feeds_in_frame[feedKey];
+			const operators = feed.operators;
+
+			// Concatenate the operators array to the result array
+			result.push(...operators);
+			}
+		}
+		operator_list = [...new Set(result)];
+	}
+
 	const interleave = (arr: any, thing: any) =>
 		[].concat(...arr.map((n: any) => [n, thing])).slice(0, -1);
 
@@ -892,6 +908,14 @@
 		}
 	}
 
+	function toggleSidebarView() {
+		if (sidebarView !== 1) {
+			sidebarView = 1;
+		} else {
+			sidebarView = 2;
+		}
+  	}
+
 	function getBoundingBoxMap():number[][] {
 		let start = performance.now();
 
@@ -1021,15 +1045,13 @@
 				mapglobal.setFilter(categoryvalues.labeldots, undefined);
 				mapglobal.setFilter(categoryvalues.pointing, regularpointers);
 				mapglobal.setFilter(categoryvalues.pointingshell, regularpointers)
-				} else 
-{
-	mapglobal.setFilter(categoryvalues.livedots, hidevehiclecommand);
-	mapglobal.setFilter(categoryvalues.labeldots, hidevehiclecommand);
-	mapglobal.setFilter(categoryvalues.pointing, hidevehiclecommandpointers);
-	mapglobal.setFilter(categoryvalues.pointingshell, hidevehiclecommandpointers)
-
-}			}
-
+				} else {
+					mapglobal.setFilter(categoryvalues.livedots, hidevehiclecommand);
+					mapglobal.setFilter(categoryvalues.labeldots, hidevehiclecommand);
+					mapglobal.setFilter(categoryvalues.pointing, hidevehiclecommandpointers);
+					mapglobal.setFilter(categoryvalues.pointingshell, hidevehiclecommandpointers)
+				}			
+			}
 			});
 
 		localStorage.setItem(layersettingsnamestorage, JSON.stringify(layersettings));
@@ -1167,6 +1189,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 		});
 
 		map.on('touchmove', (events) => {
@@ -1204,6 +1227,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 		});
 
 		function fetchKactus() {
@@ -1802,6 +1826,7 @@
 			operators_in_frame = feedresults.operators_data_obj;
 			realtime_feeds_in_frame = feedresults.realtime_feeds_data_obj;
 			realtime_list = feedresults.r;
+			getOperators();
 			}, 1000);
 
 		});
@@ -2314,6 +2339,26 @@ on:keydown={() => {
 				> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a>
 			{/if}
 		{/if}
+		{#if sidebarView == 2}
+			<h1 class="text-3xl">Super Secret Map Settings ;)</h1>
+			{#each operator_list as option (option)}
+				<div>
+					<input
+						on:click={(x) => {
+							console.log("lolpro11", operators);
+						}}
+						on:keydown={(x) => {
+							console.log("lolpro11", operators);
+						}}
+						id="{option}"
+						type="checkbox"
+						class="align-middle my-auto w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+					/>
+					<label for="{option}" class="ml-2">{option}</label>
+				</div>
+			{/each}
+		{/if}
+
 		{#if sidebarView == 9999}
 			<h1 class="text-3xl">{strings.art}</h1>
 			<Artwork image='https://art.metro.net/wp-content/uploads/2021/08/LongBeach-I-105.jpeg' name='Celestial Chance' artist='Sally Weber' description='Artist Sally Weber designed “Celestial Chance” for Long Beach Blvd. Station to explore traditional and contemporary visions of the sky.' />
@@ -2342,12 +2387,22 @@ on:keydown={() => {
 			<span class="material-symbols-outlined margin-auto select-none"> home </span>
 		</a>
 		<a
-			on:click={() => { sidebarView = 1 }}
+			on:click={() => {
+				toggleSidebarView()
+			}}
 			style:cursor="pointer !important"
 			class="absolute left-28 top-4 !cursor-pointer bg-white select-none z-50 h-10 w-10 rounded-full dark:bg-gray-900 dark:text-gray-50 pointer-events-auto flex justify-center items-center clickable"
 		>
 			<span class="material-symbols-outlined margin-auto select-none"> settings </span>
 		</a>
+		<!-- <a
+			on:click={() => { sidebarView = 2 }}
+			style:cursor="pointer !important"
+			class="absolute left-40 top-4 !cursor-pointer bg-white select-none z-50 h-10 w-10 rounded-full dark:bg-gray-900 dark:text-gray-50 pointer-events-auto flex justify-center items-center clickable"
+		>
+			<span class="material-symbols-outlined margin-auto select-none"> settings </span>
+		</a>-->
+
 		<!-- <a
 			on:click={() => { sidebarView = 0 }}
 			style:cursor="pointer !important"
