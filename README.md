@@ -5,6 +5,8 @@ sudo apt install vite
 npm install vite
 npm install -D tailwindcss
 npx tailwindcss init
+npm install toastify-js
+npm install svelte-adapter-bun
 npm update @sveltejs/kit
 ```
 ## Build and Run catenary-frontend
